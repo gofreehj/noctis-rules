@@ -1,0 +1,43 @@
+{
+  "kind": "noctis-routing-profile",
+  "format": 1,
+  "exportedAt": "2026-09-21T01:00:34.489Z",
+  "name": "noctis-loyalsoldier-whitelist",
+  "routing": {
+    "mode": "rules",
+    "ruleOrder": "direct-proxy-block",
+    "final": "proxy",
+    "blockDomains": [],
+    "directDomains": [
+      "*.oracle.com",
+      "*.oraclecloud.com",
+      "*.aimatech.com",
+      "*.aimaiot.com",
+      "*.sotamodel.net",
+      "*.aimaiot.com.cn"
+    ],
+    "proxyDomains": [
+      "play.googleapis.com",
+      "95516.com",
+      "*.linux.do"
+    ],
+    "blockGeosite": [
+      "category-ads-all"
+    ],
+    "directGeosite": [
+      "cn",
+      "apple",
+      "private"
+    ],
+    "proxyGeosite": [
+      "geolocation-!cn",
+      "google",
+      "youtube",
+      "telegram",
+      "github"
+    ],
+    "directGeoip": [
+      "cn"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "noctis-routing-profile",
+  "format": 1,
+  "exportedAt": "2026-09-21T01:00:34.490Z",
+  "name": "noctis-loyalsoldier-gfw",
+  "routing": {
+    "mode": "rules",
+    "ruleOrder": "direct-proxy-block",
+    "final": "direct",
+    "blockDomains": [],
+    "directDomains": [
+      "*.oracle.com",
+      "*.oraclecloud.com",
+      "*.aimatech.com",
+      "*.aimaiot.com",
+      "*.sotamodel.net",
+      "*.aimaiot.com.cn"
+    ],
+    "proxyDomains": [
+      "play.googleapis.com",
+      "95516.com",
+      "*.linux.do"
+    ],
+    "blockGeosite": [
+      "category-ads-all"
+    ],
+    "directGeosite": [
+      "cn",
+      "apple",
+      "private"
+    ],
+    "proxyGeosite": [
+      "geolocation-!cn",
+      "google",
+      "youtube",
+      "telegram",
+      "github",
+      "twitter",
+      "discord"
+    ],
+    "directGeoip": [
+      "cn"
+    ]
+  }
+}
