@@ -1,7 +1,7 @@
 {
   "kind": "noctis-routing-profile",
   "format": 1,
-  "exportedAt": "2026-09-21T01:00:34.489Z",
+  "exportedAt": "2026-09-21T01:12:36.102Z",
   "name": "noctis-loyalsoldier-whitelist",
   "routing": {
     "mode": "rules",
@@ -39,5 +39,37 @@
     "directGeoip": [
       "cn"
     ]
-  }
+  },
+  "Name": "noctis-loyalsoldier-whitelist",
+  "GlobalProxy": false,
+  "RouteOrder": "direct-proxy-block",
+  "DirectSites": [
+    "*.oracle.com",
+    "*.oraclecloud.com",
+    "*.aimatech.com",
+    "*.aimaiot.com",
+    "*.sotamodel.net",
+    "*.aimaiot.com.cn",
+    "geosite:cn",
+    "geosite:apple",
+    "geosite:private"
+  ],
+  "ProxySites": [
+    "play.googleapis.com",
+    "95516.com",
+    "*.linux.do",
+    "geosite:geolocation-!cn",
+    "geosite:google",
+    "geosite:youtube",
+    "geosite:telegram",
+    "geosite:github"
+  ],
+  "BlockSites": [
+    "geosite:category-ads-all"
+  ],
+  "DirectIp": [
+    "geoip:cn"
+  ],
+  "ProxyIp": [],
+  "BlockIp": []
 }

@@ -3,34 +3,14 @@
 """
 build_noctis_rules.py
 将 Loyalsoldier/clash-rules 和 Loyalsoldier/v2ray-rules-dat 移植为 Noctis 专属分流规则集。
-参考 lyc8503/sing-box-rules 的自动构建与移植思路，支持生成多种预设 Noctis 规则 profiles。
+同时支持 Noctis 本地文件导入 (noctis-routing-profile) 与 URL 在线订阅导入 (Happ / sing-box schema)。
 """
 
 import argparse
 import json
 import os
-import re
-import urllib.request
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
-
-def parse_clash_payload(content: str) -> List[str]:
-    """解析 clash-rules 的 yaml payload 列表为标准域名"""
-    domains = []
-    for line in content.splitlines():
-        line = line.strip()
-        if not line.startswith("-"):
-            continue
-        item = line.lstrip("-").strip().strip("'\"")
-        if not item or item.startswith("#"):
-            continue
-        if item.startswith("+."):
-            domains.append("*." + item[2:])
-        elif item.startswith("."):
-            domains.append("*." + item[1:])
-        else:
-            domains.append(item)
-    return domains
+from typing import Any, Dict, List, Optional
 
 def build_noctis_profile(
     name: str,
@@ -50,41 +30,74 @@ def build_noctis_profile(
     def dedup(lst):
         return list(dict.fromkeys(lst)) if lst else []
 
+    b_doms = dedup(block_domains)
+    d_doms = dedup(direct_domains)
+    p_doms = dedup(proxy_domains)
+
+    b_gs = dedup(block_geosite)
+    d_gs = dedup(direct_geosite)
+    p_gs = dedup(proxy_geosite)
+
+    b_gi = dedup(block_geoip)
+    d_gi = dedup(direct_geoip)
+    p_gi = dedup(proxy_geoip)
+
+    # 1. Noctis 原生本地文件/粘贴导入结构 (noctis-routing-profile)
     routing: Dict[str, Any] = {
         "mode": mode,
         "ruleOrder": rule_order,
         "final": final,
-        "blockDomains": dedup(block_domains),
-        "directDomains": dedup(direct_domains),
-        "proxyDomains": dedup(proxy_domains),
+        "blockDomains": b_doms,
+        "directDomains": d_doms,
+        "proxyDomains": p_doms,
     }
 
-    if block_geosite:
-        routing["blockGeosite"] = dedup(block_geosite)
-    if direct_geosite:
-        routing["directGeosite"] = dedup(direct_geosite)
-    if proxy_geosite:
-        routing["proxyGeosite"] = dedup(proxy_geosite)
+    if b_gs:
+        routing["blockGeosite"] = b_gs
+    if d_gs:
+        routing["directGeosite"] = d_gs
+    if p_gs:
+        routing["proxyGeosite"] = p_gs
 
-    if block_geoip:
-        routing["blockGeoip"] = dedup(block_geoip)
-    if direct_geoip:
-        routing["directGeoip"] = dedup(direct_geoip)
-    if proxy_geoip:
-        routing["proxyGeoip"] = dedup(proxy_geoip)
+    if b_gi:
+        routing["blockGeoip"] = b_gi
+    if d_gi:
+        routing["directGeoip"] = d_gi
+    if p_gi:
+        routing["proxyGeoip"] = p_gi
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+    # 2. Noctis URL 订阅导入结构 (Happ 协议兼容字段)
+    # Noctis 扩展的 service_worker 在 import-from-url 时检查这些字段
+    direct_sites = list(d_doms) + [f"geosite:{g}" for g in d_gs]
+    proxy_sites = list(p_doms) + [f"geosite:{g}" for g in p_gs]
+    block_sites = list(b_doms) + [f"geosite:{g}" for g in b_gs]
+    direct_ips = [f"geoip:{g}" for g in d_gi]
+    proxy_ips = [f"geoip:{g}" for g in p_gi]
+    block_ips = [f"geoip:{g}" for g in b_gi]
+
     return {
         "kind": "noctis-routing-profile",
         "format": 1,
         "exportedAt": now_iso,
         "name": name,
-        "routing": routing
+        "routing": routing,
+
+        # 全兼容字段 (解决 URL 导入报 "Response has no routing data" 的问题)
+        "Name": name,
+        "GlobalProxy": (mode == "global"),
+        "RouteOrder": rule_order,
+        "DirectSites": direct_sites,
+        "ProxySites": proxy_sites,
+        "BlockSites": block_sites,
+        "DirectIp": direct_ips,
+        "ProxyIp": proxy_ips,
+        "BlockIp": block_ips
     }
 
 def main():
     parser = argparse.ArgumentParser(description="Build Noctis routing profiles from Loyalsoldier rules")
-    parser.add_argument("--fetch-online", action="store_true", help="尝试从 GitHub/CDN 拉取在线规则文件生成展开版")
     parser.add_argument("-o", "--output-dir", default="", help="输出目录")
     args = parser.parse_args()
 
@@ -143,7 +156,7 @@ def main():
         json.dump(gfw_profile, f, ensure_ascii=False, indent=2)
     print(f"  -> 生成成功: {gfw_path}")
 
-    print("\n所有 Noctis 规则 profiles 已构建完成！")
+    print("\n所有全兼容 Noctis profiles 已构建完成！")
 
 if __name__ == "__main__":
     main()
