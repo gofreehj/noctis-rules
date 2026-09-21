@@ -3,7 +3,7 @@
 """
 build_noctis_rules.py
 将 Loyalsoldier/clash-rules 和 Loyalsoldier/v2ray-rules-dat 移植为 Noctis 专属分流规则集。
-同时支持 Noctis 本地文件导入 (noctis-routing-profile) 与 URL 在线订阅导入 (Happ / sing-box schema)。
+实现真正的白名单分流 (国内直连 + 广告拦截 + 其余海外未收录域名全走代理)。
 """
 
 import argparse
@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 def build_noctis_profile(
     name: str,
     mode: str = "rules",
-    rule_order: str = "direct-proxy-block",
+    rule_order: str = "block-direct-proxy",
     final: str = "proxy",
     block_domains: Optional[List[str]] = None,
     direct_domains: Optional[List[str]] = None,
@@ -69,7 +69,6 @@ def build_noctis_profile(
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
     # 2. Noctis URL 订阅导入结构 (Happ 协议兼容字段)
-    # Noctis 扩展的 service_worker 在 import-from-url 时检查这些字段
     direct_sites = list(d_doms) + [f"geosite:{g}" for g in d_gs]
     proxy_sites = list(p_doms) + [f"geosite:{g}" for g in p_gs]
     block_sites = list(b_doms) + [f"geosite:{g}" for g in b_gs]
@@ -84,7 +83,7 @@ def build_noctis_profile(
         "name": name,
         "routing": routing,
 
-        # 全兼容字段 (解决 URL 导入报 "Response has no routing data" 的问题)
+        # 全兼容字段
         "Name": name,
         "GlobalProxy": (mode == "global"),
         "RouteOrder": rule_order,
@@ -112,21 +111,27 @@ def main():
         "*.sotamodel.net",
         "*.aimaiot.com.cn"
     ]
-    user_proxy_domains = [
+
+    # 1. 白名单模式 (True Whitelist):
+    # 规则优先级: 拦截(block) -> 直连(direct) -> 代理(proxy)
+    # 通过在 proxyDomains 增加 '*' 通配符，捕获所有未被 geosite:cn 命中的海外/未知域名，
+    # 彻底解决小众国外网站 (如 elysiver.h-e.top, api.justwoker.icu) 因未收录在 geolocation-!cn 而被误走直连打不开的问题。
+    user_proxy_domains_whitelist = [
         "play.googleapis.com",
         "95516.com",
-        "*.linux.do"
+        "*.linux.do",
+        "*"  # 关键修复: 兜底代理通配符
     ]
 
-    print("[1/2] 构建 Noctis 经典白名单 Profile (绕过大陆 + 广告拦截)...")
+    print("[1/2] 构建 Noctis 真正的白名单 Profile (拦截广告 -> 国内直连 -> 其余海外全代理)...")
     whitelist_profile = build_noctis_profile(
         name="noctis-loyalsoldier-whitelist",
         mode="rules",
-        rule_order="direct-proxy-block",
+        rule_order="block-direct-proxy",
         final="proxy",
         block_domains=[],
         direct_domains=user_direct_domains,
-        proxy_domains=user_proxy_domains,
+        proxy_domains=user_proxy_domains_whitelist,
         block_geosite=["category-ads-all"],
         direct_geosite=["cn", "apple", "private"],
         proxy_geosite=["geolocation-!cn", "google", "youtube", "telegram", "github"],
@@ -137,6 +142,12 @@ def main():
         json.dump(whitelist_profile, f, ensure_ascii=False, indent=2)
     print(f"  -> 生成成功: {whitelist_path}")
 
+    # 2. GFW 黑名单模式 (仅受限服务走代理，其余直连)
+    user_proxy_domains_gfw = [
+        "play.googleapis.com",
+        "95516.com",
+        "*.linux.do"
+    ]
     print("[2/2] 构建 Noctis GFW 黑名单 Profile (仅受限服务走代理)...")
     gfw_profile = build_noctis_profile(
         name="noctis-loyalsoldier-gfw",
@@ -145,7 +156,7 @@ def main():
         final="direct",
         block_domains=[],
         direct_domains=user_direct_domains,
-        proxy_domains=user_proxy_domains,
+        proxy_domains=user_proxy_domains_gfw,
         block_geosite=["category-ads-all"],
         direct_geosite=["cn", "apple", "private"],
         proxy_geosite=["geolocation-!cn", "google", "youtube", "telegram", "github", "twitter", "discord"],
@@ -156,7 +167,7 @@ def main():
         json.dump(gfw_profile, f, ensure_ascii=False, indent=2)
     print(f"  -> 生成成功: {gfw_path}")
 
-    print("\n所有全兼容 Noctis profiles 已构建完成！")
+    print("\n所有修复后的 Noctis profiles 已构建完成！")
 
 if __name__ == "__main__":
     main()

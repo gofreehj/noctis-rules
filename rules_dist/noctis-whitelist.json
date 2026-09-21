@@ -1,11 +1,11 @@
 {
   "kind": "noctis-routing-profile",
   "format": 1,
-  "exportedAt": "2026-09-21T01:12:36.102Z",
+  "exportedAt": "2026-09-21T01:35:02.919Z",
   "name": "noctis-loyalsoldier-whitelist",
   "routing": {
     "mode": "rules",
-    "ruleOrder": "direct-proxy-block",
+    "ruleOrder": "block-direct-proxy",
     "final": "proxy",
     "blockDomains": [],
     "directDomains": [
@@ -19,7 +19,8 @@
     "proxyDomains": [
       "play.googleapis.com",
       "95516.com",
-      "*.linux.do"
+      "*.linux.do",
+      "*"
     ],
     "blockGeosite": [
       "category-ads-all"
@@ -42,7 +43,7 @@
   },
   "Name": "noctis-loyalsoldier-whitelist",
   "GlobalProxy": false,
-  "RouteOrder": "direct-proxy-block",
+  "RouteOrder": "block-direct-proxy",
   "DirectSites": [
     "*.oracle.com",
     "*.oraclecloud.com",
@@ -58,6 +59,7 @@
     "play.googleapis.com",
     "95516.com",
     "*.linux.do",
+    "*",
     "geosite:geolocation-!cn",
     "geosite:google",
     "geosite:youtube",
