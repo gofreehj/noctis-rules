@@ -1,9 +1,11 @@
-name: Sync Loyalsoldier Rules to Noctis
+name: Build Noctis Profiles
 
 on:
-  schedule:
-    - cron: "0 22 * * *" # 北京时间每天早晨 6:00
   workflow_dispatch:
+  push:
+    paths:
+      - "scripts/**"
+      - ".github/workflows/**"
 
 jobs:
   build:
@@ -29,6 +31,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes in rules."
           else
-            git commit -m "chore: auto-sync Loyalsoldier rules to Noctis profiles [skip ci]"
+            git commit -m "chore: rebuild Noctis profiles [skip ci]"
             git push
           fi
